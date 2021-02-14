@@ -142,7 +142,7 @@ let rec query_balltree___ bt pq query_point n_neighbours =
     | Leaf (d, d_idx) ->
         let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
         if (Float.compare dist_to_leaf top_el_dist) < 0 then
-            Fheap.add pq (d, d_idx)
+            Fheap.add pq (dist_to_leaf, d_idx)
         else
             pq
     | Node ({centroid=median_value; dimension=c; radius=max_distance_radius}, left, right) ->
@@ -159,7 +159,7 @@ let rec query_balltree___ bt pq query_point n_neighbours =
                 let pq = query_balltree___ right pq query_point n_neighbours in
                 let pq = query_balltree___ left pq query_point n_neighbours in
                 pq
-                
+;;     
             
                 
                 
@@ -168,13 +168,12 @@ let rec query_balltree___ bt pq query_point n_neighbours =
 
 let query_balltree bt query_point n_neighbours =
     let create_heap query_item = 
-        let compare_fun (x1, _) (x2, _) =
-            compare_float ((Tensor.dist query_item x1) |> Tensor.to_float0_exn)
-                          ((Tensor.dist query_item x1) |> Tensor.to_float0_exn) in
-    Fheap.create compare_fun in
+        let compare_fun (d1, _) (d2, _) =
+            compare_float d2 d1 in
+        Fheap.create compare_fun in
     
     let pq = create_heap query_point in  
-    query_balltree_ bt pq query_point n_neighbours
+    query_balltree___ bt pq query_point n_neighbours
 ;;
  
   
@@ -224,7 +223,9 @@ let closest_node, closest_node_idx, closest_node_distance = query_simple_find_cl
 
 
 let query_point = (Tensor.of_float2 [|[|5.3|]|]);;
-let pq = create_heap query_point;;
+let pq_result = query_balltree one_d_bt query_point 3;;
+Fheap.to_list pq_result;;
+
 
 
 
