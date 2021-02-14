@@ -12,9 +12,6 @@
 open Core;;
 open Core_kernel;;
 open Torch;;
-(* open Tensor;; *)
-(* type ball = { centroid: float; radius: float} *)
-
 
 type ball = { centroid: Tensor.t; dimension: int; radius: float }
 
@@ -24,19 +21,8 @@ type ball = { centroid: Tensor.t; dimension: int; radius: float }
 type tree = 
     | Leaf of Tensor.t * Tensor.t
     | Node of (ball * tree * tree)
-    (*
-    | Node of (ball * (Tensor.t) * (Tensor.t))
-    *)
 ;;
 
-(* 
-let median arr =
-  let len = Array.length arr in
-    Array.sort compare arr;
-    (array.((len-1)/2) +. array.(len/2)) /. 2.0;;
-*)
-
-(* FIXME: return indices everywhere. Just add them to the leaves *)
 
 (* Returns: a tree structure *)
 let rec construct_balltree_ d d_indices =
@@ -68,8 +54,9 @@ let rec construct_balltree_ d d_indices =
         Node ({centroid=median_value; dimension=c; radius=max_distance}, construct_balltree_ left_subset left_indices, construct_balltree_ right_subset right_indices)   
 ;;
 
+
 let construct_balltree d = 
-    let d_indices = (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i (fst (Tensor.shape2_exn d))) ~options:(Torch_core.Kind.T Int64, Torch_core.Device.Cpu)) in
+    let d_indices = (Tensor.range ~start:(Torch.Scalar.i 0) ~end_:(Torch.Scalar.i ((fst (Tensor.shape2_exn d) - 1))) ~options:(Torch_core.Kind.T Int64, Torch_core.Device.Cpu)) in
     construct_balltree_ d d_indices
 ;;
 
@@ -121,15 +108,14 @@ let rec query_balltree___ bt pq query_point n_neighbours =
         else 
             (* OK, promising, find out which of the two children is closer *)
             if (Float.compare (Tensor.get_float1 query_point c) (Tensor.get_float1 median_value c)) < 0 then
-                let pq = query_balltree___ left pq query_point n_neighbours in
-                let pq = query_balltree___ right pq query_point n_neighbours in
-                pq
+                let pq1 = query_balltree___ left pq query_point n_neighbours in
+                let pq2 = query_balltree___ right pq1 query_point n_neighbours in
+                pq2
             else
-                let pq = query_balltree___ right pq query_point n_neighbours in
-                let pq = query_balltree___ left pq query_point n_neighbours in
-                pq
-;;     
-
+                let pq1 = query_balltree___ right pq query_point n_neighbours in
+                let pq2 = query_balltree___ left pq1 query_point n_neighbours in
+                pq2
+;;
 
 let query_balltree bt query_point n_neighbours =
     let create_heap query_item = 
@@ -184,14 +170,22 @@ Stdio.print_string (get_string_of_ball (construct_balltree one_d_tensor_reverse)
 assert (String.equal (get_string_of_ball (construct_balltree one_d_tensor)) (get_string_of_ball (construct_balltree one_d_tensor_reverse))) ;;
 
 let one_d_bt = (construct_balltree one_d_tensor);;
-query_simple_find_closest_point_ one_d_bt (Tensor.of_float2 [|[|5.3|]|]);;
-let closest_node, closest_node_idx, closest_node_distance = query_simple_find_closest_point_ one_d_bt (Tensor.of_float2 [|[|1.0|]|]);;
-
+Stdio.print_string (get_string_of_ball one_d_bt);;
 
 let query_point = (Tensor.of_float2 [|[|5.3|]|]);;
-let pq_result = query_balltree one_d_bt query_point 3;;
+let point1, __, dist1 = query_simple_find_closest_point_ one_d_bt query_point;;
 
+let dist2, idx2 = query_balltree one_d_bt (Tensor.of_float2 [|[|5.3|]|]) 1 |> List.hd_exn;;
+assert (Float.equal dist1 dist2);;
+let point2 = (Tensor.index one_d_tensor [idx2]) |> Tensor.to_float0_exn;;
+assert (Float.equal point2 (Tensor.to_float0_exn point1));;
 
+(* Interestingly: does not work yet for larger number of neighbours! *)
+for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
+    let query_results = (query_balltree one_d_bt (Tensor.of_float2 [|[|Float.of_int i|]|]) i) in
+    Stdio.print_endline (Int.to_string (List.length query_results));
+    assert (Int.equal (List.length query_results) i)
+done;;
 
 let tiny_list = [ [1.; 2.;]; [1.; 3.;]; [0.5; 0.3;]; [4.; 5.;] ]
 let tiny_array = [| [|1.; 2.;|]; [|1.; 3.;|]; [|0.5; 0.3;|]; [|4.; 5.;|] |]
