@@ -101,7 +101,7 @@ let rec query_simple_find_closest_point_ bt query_point =
 let unsome = function Some a -> a | None -> raise (Not_found_s (Sexp.of_string "should not happen"));;
 
 (* See https://en.wikipedia.org/wiki/Ball_tree#Pseudocode_2 *)
-let rec query_balltree_ bt pq query_point n_neighbours =
+let rec query_balltree__ bt pq query_point n_neighbours =
     match bt with 
     | Leaf (d, d_idx) ->
         let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
@@ -120,6 +120,49 @@ let rec query_balltree_ bt pq query_point n_neighbours =
             else
                 query_simple_find_closest_point right query_point median_value cur_idx dist_to_centroid
 ;;
+
+let rec query_balltree__wtf bt pq query_point n_neighbours =
+    if (Fheap.length pq) > 0 then
+      let top_el_dist, top_el_idx = (Fheap.top_exn pq3) in
+      (* 
+          if distance(query_point, B.pivot) - B.radius ≥ top_el_dist then
+        return Q unchanged
+      *)
+      if top_el_dist
+      some_dist
+    else
+      pq
+;;
+
+let rec query_balltree___ bt pq query_point n_neighbours =
+    let top_el_dist = match Fheap.top pq with
+        | None -> Float.max_finite_value
+        | Some (x, _) -> x in
+    match bt with
+    | Leaf (d, d_idx) ->
+        let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
+        if (Float.compare dist_to_leaf top_el_dist) < 0 then
+            Fheap.add pq (d, d_idx)
+        else
+            pq
+    | Node ({centroid=median_value; dimension=c; radius=max_distance_radius}, left, right) ->
+        let dist_to_centroid = (Tensor.dist median_value query_point) |> Tensor.to_float0_exn in
+        if (Float.compare (dist_to_centroid -. max_distance_radius) top_el_dist) >= 0 then
+            pq
+        else 
+            (* Find out which of the two children is closer *)
+            if (Float.compare (Tensor.get_float1 query_point c) (Tensor.get_float1 median_value c)) < 0 then
+                let pq = query_balltree___ left pq query_point n_neighbours in
+                let pq = query_balltree___ right pq query_point n_neighbours in
+                pq
+            else
+                let pq = query_balltree___ right pq query_point n_neighbours in
+                let pq = query_balltree___ left pq query_point n_neighbours in
+                pq
+                
+            
+                
+                
 
 
 
