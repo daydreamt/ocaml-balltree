@@ -121,7 +121,7 @@ let rec get_string_of_ball_ d i max_depth =
         | _ -> x ^ (repeat_string x (i - 1)) in
     let spaces = (repeat_string "-" (Int.pow 2 i)) in
     match d with
-    | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:80) ^ "\n"
+    | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Float.to_string (Tensor.to_float0_exn d_idx)) ^ "\n"
     | Node (b, left, right) ->
         let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in 
         let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in
