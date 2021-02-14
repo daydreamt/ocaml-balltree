@@ -20,7 +20,7 @@ type ball = { centroid: Tensor.t; dimension: int; radius: float }
 (* let dist x y = Tensor.dist x y |> Tensor.to_float0_exn |> (fun x-> x *. (1. /. Float.epsilon_float));; *)
 
 type tree = 
-    | Leaf of Tensor.t
+    | Leaf of Tensor.t * Tensor.t
     | Node of (ball * tree * tree)
     (*
     | Node of (ball * (Tensor.t) * (Tensor.t))
@@ -37,10 +37,10 @@ let median arr =
 (* FIXME: return indices everywhere. Just add them to the leaves *)
 
 (* Returns: a tree structure *)
-let rec construct_balltree d =
+let rec construct_balltree_ d d_indices =
     let num_points, num_dim = Tensor.shape2_exn d in
     match num_points with
-      | 1 -> Leaf d (* Leaf (Array.get (Tensor.to_float2_exn d) 0) *)
+      | 1 -> Leaf (d, d_indices) (* Leaf (Array.get (Tensor.to_float2_exn d) 0) *)
       | _ -> 
         (* The centroid is our median *)
         let median_value, median_indices = Tensor.median1 d ~dim:0 ~keepdim:false in
@@ -59,14 +59,21 @@ let rec construct_balltree d =
         let greater_than_median_indices = Tensor.gt this_dim_d (Scalar.f this_dim_median) |> Tensor.nonzero |> Tensor.squeeze in 
         (* Make subsets d into two tensors: one with items less than median in this dimension, one greater or equal in this dimension *)
         let left_subset = Tensor.index_select d ~dim:0 ~index:(less_than_median_indices) in
+        let left_indices = Tensor.index_select d_indices ~dim:0 ~index:(less_than_median_indices) in
         let right_subset = Tensor.index_select d ~dim:0 ~index:(greater_than_median_indices) in
+        let right_indices = Tensor.index_select d_indices ~dim:0 ~index:(greater_than_median_indices) in
         
-        Node ({centroid=median_value; dimension=c; radius=max_distance}, construct_balltree left_subset, construct_balltree right_subset)   
+        Node ({centroid=median_value; dimension=c; radius=max_distance}, construct_balltree_ left_subset left_indices, construct_balltree_ right_subset right_indices)   
+;;
+
+let construct_balltree d = 
+    let d_indices = (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i (fst (Tensor.shape2_exn d))) ~options:(Torch_core.Kind.T Int64, Torch_core.Device.Cpu)) in
+    construct_balltree_ d d_indices
 ;;
 
 let rec query_simple_find_closest_point bt query_point cur_closest cur_dist =
     match bt with 
-    | Leaf d -> 
+    | Leaf (d, d_idx) -> 
         let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
         if (Float.compare dist_to_leaf cur_dist) < 0 then
             (d, dist_to_leaf)
@@ -101,7 +108,7 @@ let query_balltree bt point n_neighbours =
 (* distances, indices = query_balltree(tree, point, n_neighbours=2 *)
 let rec get_depth_of_ball d =
     match d with 
-    | Leaf d -> 0
+    | Leaf (d, d_idx) -> 0
     | Node (b, left, right) -> 1 + Int.max (get_depth_of_ball left) (get_depth_of_ball right)
 
 (* Root: first line, center. 
@@ -114,7 +121,7 @@ let rec get_string_of_ball_ d i max_depth =
         | _ -> x ^ (repeat_string x (i - 1)) in
     let spaces = (repeat_string "-" (Int.pow 2 i)) in
     match d with
-    | Leaf d -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:80) ^ "\n"
+    | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:80) ^ "\n"
     | Node (b, left, right) ->
         let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in 
         let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in
