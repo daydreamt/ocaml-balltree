@@ -4,8 +4,10 @@
 
 #require "torch.toplevel";;
 #require "core.top";;
-#require "core_kernel.pairing_heap";;
-(* There's also core_kernel.fheap *)
+#require "core_kernel.fheap";;
+
+(* There's also core_kernel.fheap "core_kernel.pairing_heap" *)
+
 
 open Core;;
 open Core_kernel;;
@@ -71,39 +73,67 @@ let construct_balltree d =
     construct_balltree_ d d_indices
 ;;
 
-let rec query_simple_find_closest_point bt query_point cur_closest cur_dist =
+let rec query_simple_find_closest_point bt query_point cur_closest cur_idx cur_dist =
     match bt with 
     | Leaf (d, d_idx) -> 
         let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
         if (Float.compare dist_to_leaf cur_dist) < 0 then
-            (d, dist_to_leaf)
+            (d, d_idx, dist_to_leaf)
         else
-            (cur_closest, cur_dist)
+            (cur_closest, cur_idx, cur_dist)
     | Node ({centroid=median_value; dimension=c; radius=max_distance_radius}, left, right) ->
         let dist_to_centroid = (Tensor.dist median_value query_point) |> Tensor.to_float0_exn in
         if (Float.compare (dist_to_centroid -. max_distance_radius) cur_dist) >= 1 then
-            (cur_closest, cur_dist)
+            (cur_closest, cur_idx, cur_dist)
         else 
             (* Find out which of the two children is closer *)
             if (Float.compare (Tensor.get_float1 query_point c) (Tensor.get_float1 median_value c)) < 0 then
-                query_simple_find_closest_point left query_point median_value dist_to_centroid
+                query_simple_find_closest_point left query_point median_value cur_idx dist_to_centroid
             else
-                query_simple_find_closest_point right query_point median_value dist_to_centroid   
+                query_simple_find_closest_point right query_point median_value cur_idx dist_to_centroid
 ;;
 
 let rec query_simple_find_closest_point_ bt query_point =
-    query_simple_find_closest_point bt query_point query_point (Float.max_finite_value)
+    query_simple_find_closest_point bt query_point query_point (Tensor.of_int1 [|-1|]) (Float.max_finite_value)
 ;;
 
-(*
-let rec query_balltree_ bt point n_neighbours =
-    query_simple_find_closest_point bt query_point (Float.max_finite_value)
+
+let unsome = function Some a -> a | None -> raise (Not_found_s (Sexp.of_string "should not happen"));;
+
+(* See https://en.wikipedia.org/wiki/Ball_tree#Pseudocode_2 *)
+let rec query_balltree_ bt pq query_point n_neighbours =
+    match bt with 
+    | Leaf (d, d_idx) ->
+        let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
+        if (Float.compare dist_to_leaf cur_dist) < 0 then
+            (d, d_idx, dist_to_leaf)
+        else
+            (cur_closest, cur_idx, cur_dist)
+    | Node ({centroid=median_value; dimension=c; radius=max_distance_radius}, left, right) ->
+        let dist_to_centroid = (Tensor.dist median_value query_point) |> Tensor.to_float0_exn in
+        if (Float.compare (dist_to_centroid -. max_distance_radius) cur_dist) >= 1 then
+            (cur_closest, cur_idx, cur_dist)
+        else 
+            (* Find out which of the two children is closer *)
+            if (Float.compare (Tensor.get_float1 query_point c) (Tensor.get_float1 median_value c)) < 0 then
+                query_simple_find_closest_point left query_point median_value cur_idx dist_to_centroid
+            else
+                query_simple_find_closest_point right query_point median_value cur_idx dist_to_centroid
 ;;
 
-let query_balltree bt point n_neighbours =
-    query_balltree_ bt query_point query_point (Float.max_finite_value)
+
+
+let query_balltree bt query_point n_neighbours =
+    let create_heap query_item = 
+        let compare_fun (x1, _) (x2, _) =
+            compare_float ((Tensor.dist query_item x1) |> Tensor.to_float0_exn)
+                          ((Tensor.dist query_item x1) |> Tensor.to_float0_exn) in
+    Fheap.create compare_fun in
+    
+    let pq = create_heap query_point in  
+    query_balltree_ bt pq query_point n_neighbours
 ;;
-*) 
+ 
   
 (* distances, indices = query_balltree(tree, point, n_neighbours=2 *)
 let rec get_depth_of_ball d =
@@ -121,7 +151,7 @@ let rec get_string_of_ball_ d i max_depth =
         | _ -> x ^ (repeat_string x (i - 1)) in
     let spaces = (repeat_string "-" (Int.pow 2 i)) in
     match d with
-    | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Float.to_string (Tensor.to_float0_exn d_idx)) ^ "\n"
+    | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Int.to_string (Tensor.to_int0_exn d_idx)) ^ "\n"
     | Node (b, left, right) ->
         let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in 
         let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in
@@ -147,6 +177,11 @@ assert (String.equal (get_string_of_ball (construct_balltree one_d_tensor)) (get
 
 let one_d_bt = (construct_balltree one_d_tensor);;
 query_simple_find_closest_point_ one_d_bt (Tensor.of_float2 [|[|5.3|]|]);;
+let closest_node, closest_node_idx, closest_node_distance = query_simple_find_closest_point_ one_d_bt (Tensor.of_float2 [|[|1.0|]|]);;
+
+
+let query_point = (Tensor.of_float2 [|[|5.3|]|]);;
+let pq = create_heap query_point;;
 
 
 
