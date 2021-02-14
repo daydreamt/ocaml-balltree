@@ -4,8 +4,6 @@
 #require "torch.toplevel"
 #require "core.top"
 #require "core_kernel.fheap"
-
-(* There's also core_kernel.fheap "core_kernel.pairing_heap" *)
 open Core
 open Core_kernel
 open Torch
@@ -43,7 +41,6 @@ let rec construct_balltree_ d d_indices =
         let left_indices = Tensor.index_select d_indices ~dim:0 ~index:(less_than_median_indices) in
         let right_subset = Tensor.index_select d ~dim:0 ~index:(greater_than_median_indices) in
         let right_indices = Tensor.index_select d_indices ~dim:0 ~index:(greater_than_median_indices) in
-        
         Node ({centroid=median_value; dimension=c; radius=max_distance}, construct_balltree_ left_subset left_indices, construct_balltree_ right_subset right_indices)   
 
 
