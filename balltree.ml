@@ -19,7 +19,7 @@ type tree =
 let rec construct_balltree_ d d_indices =
     let num_points, num_dim = Tensor.shape2_exn d in
     match num_points with
-      | 1 -> Leaf (d, d_indices) (* Leaf (Array.get (Tensor.to_float2_exn d) 0) *)
+      | 1 -> Leaf (d, d_indices)
       | _ -> 
         (* The centroid is our median *)
         let median_value, median_indices = Tensor.median1 d ~dim:0 ~keepdim:false in
@@ -82,8 +82,8 @@ let rec query_balltree_ bt pq query_point n_neighbours =
                 pq2
 
 
-(* API we are aiming for:
-   distances, indices = query_balltree(tree, point, n_neighbours=2 *)
+(* ENH: We are aiming for a sklearn-like API:
+   distances, indices = query_balltree(tree, point, n_neighbours *)
 let query_balltree bt query_point n_neighbours =
     let create_heap query_item = 
         let compare_fun (d1, _) (d2, _) =
