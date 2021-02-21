@@ -10,8 +10,7 @@ open Torch
 
 (* ENH: Support more distances. Currently only Euclidean. *)
 type ball = { centroid: Tensor.t; dimension: int; radius: float }
-type tree = 
-    | EmptyLeaf
+type tree =
     | Leaf of Tensor.t * Tensor.t
     | Node of (ball * tree * tree)
 
@@ -20,7 +19,6 @@ type tree =
 let rec construct_balltree_ d d_indices =
     let num_points, num_dim = Tensor.shape2_exn d in
     match num_points with
-      | 0 -> EmptyLeaf
       | 1 -> Leaf (d, d_indices)
       | _ -> 
         (* The centroid is our median *)
@@ -59,7 +57,6 @@ let rec query_balltree_ bt pq query_point n_neighbours =
         | None -> Float.max_finite_value
         | Some (x, _) -> x in
     match bt with
-    | EmptyLeaf -> pq
     | Leaf (d, d_idx) ->
         let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
         if ((Float.compare dist_to_leaf top_el_dist) < 0 ||
@@ -100,7 +97,6 @@ let query_balltree bt query_point n_neighbours =
 
 let rec get_depth_of_ball d =
     match d with 
-    | EmptyLeaf -> 0
     | Leaf (d, d_idx) -> 0
     | Node (b, left, right) -> 1 + Int.max (get_depth_of_ball left) (get_depth_of_ball right)
 
@@ -114,7 +110,6 @@ let rec get_string_of_ball_ d i max_depth =
         | _ -> x ^ (repeat_string x (i - 1)) in
     let spaces = (repeat_string "-" (Int.pow 2 i)) in
     match d with
-    | EmptyLeaf -> ""
     | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Int.to_string (Tensor.to_int0_exn d_idx)) ^ "\n"
     | Node (b, left, right) ->
         let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in 
