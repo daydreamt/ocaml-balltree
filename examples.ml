@@ -1,6 +1,12 @@
 #use "balltree.ml"
 
 (*Examples/ tests *)
+
+(* This one can cause a crash *)
+let bad_points = Tensor.of_float2  [| [| 0.; 0. |]; [| 0.; 0. |] |];;
+construct_balltree bad_point;;
+
+(* These ones shouldn't *)
 let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu))
                                   [-1;1];;
 let one_d_tensor_reverse = Tensor.reshape (Tensor.of_float1 ~device:Torch_core.Device.Cpu [|4.;5.;6.;7.;8.;9.;10.;1.;2.;3.;|])
