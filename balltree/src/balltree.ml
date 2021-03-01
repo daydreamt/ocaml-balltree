@@ -7,7 +7,7 @@
 #require "core.top"
 #require "core_kernel.fheap"
 *)
-open Core
+
 open Core_kernel
 open Torch
 
@@ -25,10 +25,10 @@ let rec construct_balltree_ d d_indices =
       | 1 -> Leaf (d, d_indices)
       | _ ->
         (* The centroid is our median *)
-        let median_value, median_indices = Tensor.median1 d ~dim:0 ~keepdim:false in
+        let median_value, _ = Tensor.median1 d ~dim:0 ~keepdim:false in
         (* Compute the radius: maximum distance of any datapoint ENH: Other functions*)
         let distances = Tensor.norm2 Tensor.(d - median_value) ~p:(Torch.Scalar.i 2) ~dim:[1] ~keepdim:false in
-        let max_distance, max_distance_index = Tensor.max2 ~dim:0 ~keepdim:false distances in
+        let max_distance, _ = Tensor.max2 ~dim:0 ~keepdim:false distances in
         let max_distance = Tensor.to_float0_exn max_distance in
         (* Get dimension of maximum variance *)
         let c = Tensor.std1 d ~dim:[0] ~unbiased:true ~keepdim:false |> Tensor.argmax |> Tensor.to_int0_exn in
@@ -70,7 +70,7 @@ let rec query_balltree_ bt pq query_point n_neighbours =
     | Leaf (d, d_idx) ->
         let num_points_leaf, _ = Tensor.shape2_exn d in
         let dist_to_leaf =
-            if num_points_leaf == 1 then
+            if phys_equal num_points_leaf 1 then
                (Tensor.dist d query_point) |> Tensor.to_float0_exn
             else
                (Tensor.dist (Tensor.select ~dim:0 ~index:0 d) query_point) |> Tensor.to_float0_exn in
@@ -100,20 +100,20 @@ let rec query_balltree_ bt pq query_point n_neighbours =
 (* ENH: We are aiming for a sklearn-like API:
    distances, indices = query_balltree(tree, point, n_neighbours *)
 let query_balltree bt query_point n_neighbours =
-    let create_heap query_item =
+    let create_heap =
         let compare_fun (d1, _) (d2, _) =
             compare_float d2 d1 in
-        Fheap.create compare_fun in
+        Fheap.create ~cmp:compare_fun in
 
-    let pq = create_heap query_point in
+    let pq = create_heap in
     let pq_result = query_balltree_ bt pq query_point n_neighbours in
     List.rev (Fheap.to_list pq_result)
 
 
 let rec get_depth_of_ball d =
     match d with
-    | Leaf (d, d_idx) -> 0
-    | Node (b, left, right) -> 1 + Int.max (get_depth_of_ball left) (get_depth_of_ball right)
+    | Leaf (_, __) -> 0
+    | Node (_, left, right) -> 1 + Int.max (get_depth_of_ball left) (get_depth_of_ball right)
 
 (* Root: first line, center.
    First print left children, then right.
@@ -126,13 +126,13 @@ let rec get_string_of_ball_ d i max_depth =
     let spaces = (repeat_string "-" (Int.pow 2 i)) in
     match d with
     | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Int.to_string (Tensor.to_int0_exn d_idx)) ^ "\n"
-    | Node (b, left, right) ->
+    | Node (_, left, right) ->
         let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in
         let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in
         left_substring ^ "\n" ^ (repeat_string "*" (Int.pow 2 (max_depth - i))) ^ "split number: " ^ (Int.to_string i) ^ (repeat_string "*" (Int.pow 2 (max_depth - i))) ^ "\n" ^ right_substring
 
 let get_string_of_ball d =
-    let level_of_indentation = 2 in
     let depth = get_depth_of_ball d in
-    let n_spaces = depth * level_of_indentation in
+    (*     let level_of_indentation = 2 in 
+    let n_spaces = depth * level_of_indentation in *)
     get_string_of_ball_ d 0 depth

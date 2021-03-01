@@ -3,6 +3,7 @@
  (libraries 
     torch
     core
+    core_kernel.fheap
     ))
 
 (include_subdirs unqualified)
