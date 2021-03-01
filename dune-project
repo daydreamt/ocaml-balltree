@@ -18,6 +18,5 @@
    core
    core_kernel.fheap
    opium
-   sexplib
    ppx_sexp_conv
    ))

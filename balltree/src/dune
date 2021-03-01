@@ -2,10 +2,8 @@
  (public_name balltree)
  (libraries 
     torch
-    ppx_jane
     core
     core_kernel.fheap
-    sexplib
     ppx_sexp_conv
     ))
 
