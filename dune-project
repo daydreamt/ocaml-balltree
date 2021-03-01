@@ -16,6 +16,8 @@
    (>= 4.08))
    torch
    core
-   core_kernel
+   core_kernel.fheap
    opium
+   sexplib
+   ppx_sexp_conv
    ))

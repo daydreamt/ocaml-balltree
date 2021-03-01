@@ -11,12 +11,14 @@
 open Core_kernel
 open Torch
 
+module Balltree = struct
 (* ENH: Support more distances. Currently only Euclidean. *)
-type ball = { centroid: Tensor.t; dimension: int; radius: float }
+type ball = { centroid: Tensor.t; dimension: int; radius: float } [@@deriving sexp_of]
 type tree =
     | Leaf of Tensor.t * Tensor.t
-    | Node of (ball * tree * tree)
-
+    | Node of (ball * tree * tree) 
+    [@@deriving sexp_of]
+type t = tree [@@deriving sexp_of]
 
 (* Returns: a tree structure *)
 let rec construct_balltree_ d d_indices =
@@ -136,3 +138,5 @@ let get_string_of_ball d =
     (*     let level_of_indentation = 2 in 
     let n_spaces = depth * level_of_indentation in *)
     get_string_of_ball_ d 0 depth
+
+end
