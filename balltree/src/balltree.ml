@@ -1,13 +1,6 @@
 (* See https://en.wikipedia.org/wiki/Ball_tree
        http://people.ee.duke.edu/~lcarin/liu06a.pdf , chapter 2
 *)
-
-(*
-#require "torch.toplevel"
-#require "core.top"
-#require "core_kernel.fheap"
-*)
-
 open Core_kernel
 open Torch
 
