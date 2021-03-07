@@ -56,8 +56,11 @@ assert (Float.equal point2 (Tensor.to_float0_exn point1));;
 
 for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
     let query_results = (Balltree.query_balltree one_d_bt (Tensor.of_float2 [|[|Float.of_int i|]|]) i) in
-    Stdio.print_endline (Int.to_string (List.length query_results));
-    assert (Int.equal (List.length query_results) i)
+    let distances, indices = query_results in
+    let l1 = List.length distances in
+    let l2 = List.length indices in
+    Stdio.print_endline (Int.to_string l1);
+    assert ((Int.equal l1 l2) && (Int.equal l2 i))
 done;;
 
 let tiny_list = [ [1.; 2.;]; [1.; 3.;]; [0.5; 0.3;]; [4.; 5.;] ]

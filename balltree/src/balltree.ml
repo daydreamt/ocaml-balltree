@@ -90,8 +90,8 @@ module Balltree = struct
                     pq2
 
 
-    (* ENH: We are aiming for a sklearn-like API:
-       distances, indices = query_balltree(tree, point, n_neighbours *)
+    (* sklearn-like API: query_balltree(tree, point, n_neighbours
+       returns distances, indices  *)
     let query_balltree bt query_point n_neighbours =
         let create_heap =
             let compare_fun (d1, _) (d2, _) =
@@ -100,8 +100,10 @@ module Balltree = struct
 
         let pq = create_heap in
         let pq_result = query_balltree_ bt pq query_point n_neighbours in
-        List.rev (Fheap.to_list pq_result)
-
+        let ll = List.rev (Fheap.to_list pq_result) in
+        let distances = List.map ll ~f:fst in
+        let indices = List.map ll ~f:(fun x -> snd x |> Tensor.to_int0_exn) in
+        distances, indices
 
     let rec get_depth_of_ball d =
         match d with
