@@ -69,6 +69,7 @@ module Balltree = struct
                    (Tensor.dist (Tensor.select ~dim:0 ~index:0 d) query_point) |> Tensor.to_float0_exn in
             if ((Float.compare dist_to_leaf top_el_dist) < 0 ||
                 (Fheap.length pq < n_neighbours)) then
+                (* TODO: if num_points_leaf > 1, don't do Fheap.add, but something else *)
                 let pq = Fheap.add pq (dist_to_leaf, d_idx) in
                 if (Fheap.length pq) > n_neighbours then (unsome (Fheap.remove_top pq)) else pq
             else
