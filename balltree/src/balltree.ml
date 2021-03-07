@@ -118,7 +118,7 @@ module Balltree = struct
             | _ -> x ^ (repeat_string x (i - 1)) in
         let spaces = (repeat_string "-" (Int.pow 2 i)) in
         match d with
-        | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Int.to_string (Tensor.to_int0_exn d_idx)) ^ "\n"
+        | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Tensor.to_string d_idx ~line_size:40) ^ "\n"
         | Node (_, left, right) ->
             let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in
             let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in

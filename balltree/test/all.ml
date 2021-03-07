@@ -5,7 +5,8 @@ open Torch
 
 (* This one can cause a crash *)
 let bad_points = Tensor.of_float2  [| [| 0.; 0. |]; [| 0.; 0. |] |];;
-Balltree.construct_balltree bad_points;;
+let bad_points_bt = Balltree.construct_balltree bad_points;;
+Stdio.print_string (Balltree.get_string_of_ball bad_points_bt);;
 
 (* These ones shouldn't *)
 let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1];;
