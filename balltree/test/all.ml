@@ -21,39 +21,20 @@ Stdio.print_string (Balltree.get_string_of_ball one_d_reverse_bt);;
 
 let query_point = (Tensor.of_float2 [|[|5.3|]|]);;
 
-(* Code to help test query_balltree. This does not deal with duplicates. *)
-(*
-let rec query_simple_find_closest_point bt query_point cur_closest cur_idx cur_dist =
-    match bt with
-    | Leaf (d, d_idx) ->
-        let dist_to_leaf = (Tensor.dist d query_point) |> Tensor.to_float0_exn in
-        if (Float.compare dist_to_leaf cur_dist) < 0 then
-            (d, d_idx, dist_to_leaf)
-        else
-            (cur_closest, cur_idx, cur_dist)
-    | Node ({centroid=median_value; dimension=c; radius=max_distance_radius}, left, right) ->
-        let dist_to_centroid = (Tensor.dist median_value query_point) |> Tensor.to_float0_exn in
-        if (Float.compare (dist_to_centroid -. max_distance_radius) cur_dist) >= 1 then
-            (cur_closest, cur_idx, cur_dist)
-        else
-            (* Find out which of the two children is closer *)
-            if (Float.compare (Tensor.get_float1 query_point c) (Tensor.get_float1 median_value c)) < 0 then
-                query_simple_find_closest_point left query_point median_value cur_idx dist_to_centroid
-            else
-                query_simple_find_closest_point right query_point median_value cur_idx dist_to_centroid
+(* Test that the balltree can find the nearest point in the 1d case*)
+Stdio.print_endline "checking we can retrieve the nearest neighbour in 1d case";
+for i=1 to 10 do
+    let query_point = Tensor.of_float2 [|[| (Float.of_int i) |]|] in
+    let distances, indices = Balltree.query_balltree one_d_bt query_point 1 in
+    (* The number found should be i *)
+    assert (Float.equal (List.hd distances) 0.);
+    (* And also have the correct index (starting from 0) *)
+    assert (Int.equal (i-1) (List.hd indices));
+done
 ;;
 
-let rec query_simple_find_closest_point_ bt query_point =
-    query_simple_find_closest_point bt query_point query_point (Tensor.of_int1 [|-1|]) (Float.max_finite_value)
-;;
-let point1, __, dist1 = query_simple_find_closest_point_ one_d_bt query_point;;
 
-let dist2, idx2 = query_balltree one_d_bt (Tensor.of_float2 [|[|5.3|]|]) 1 |> List.hd_exn;;
-assert (Float.equal dist1 dist2);;
-let point2 = (Tensor.index one_d_tensor [idx2]) |> Tensor.to_float0_exn;;
-assert (Float.equal point2 (Tensor.to_float0_exn point1));;
-*)
-
+Stdio.print_endline "checking we retrieve as many neighbours as n_neighbours";
 for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
     let query_results = (Balltree.query_balltree one_d_bt (Tensor.of_float2 [|[|Float.of_int i|]|]) i) in
     let distances, indices = query_results in
