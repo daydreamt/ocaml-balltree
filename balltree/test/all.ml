@@ -3,7 +3,7 @@ open Torch
 
 (*Examples/ tests *)
 
-(* This one can cause a crash *)
+(* This one used to cause a crash: leaves can now contain more than one element *)
 let bad_points = Tensor.of_float2  [| [| 0.; 0. |]; [| 0.; 0. |] |];;
 let bad_points_bt = Balltree.construct_balltree bad_points;;
 Stdio.print_string (Balltree.get_string_of_ball bad_points_bt);;
