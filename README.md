@@ -1,1 +1,1 @@
-TODO: For d > 1, depending on the input shape [-1;1] vs [1;-1], Tensor.dist returns a different result, so we have to choose which of the 2 formats we expect the input in, and assert everywhere accordingly.
+Balltree data structure implemented in ocaml-torch. Currently only supports Euclidean distance. 

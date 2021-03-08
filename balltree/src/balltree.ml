@@ -19,7 +19,9 @@ module Balltree = struct
           | _ ->
             (* The centroid is our median *)
             let median_value, _ = Tensor.median1 d ~dim:0 ~keepdim:false in
-            (* Compute the radius: maximum distance of any datapoint ENH: Other functions*)
+            (* Compute the radius: maximum distance of any datapoint 
+            ENH: To use other functions, we should probably use the same distance function everywhere
+                 and not sometimes Tensor.norm2, and sometimes Tensor.dist *)
             let distances = Tensor.norm2 Tensor.(d - median_value) ~p:(Torch.Scalar.i 2) ~dim:[1] ~keepdim:false in
             let max_distance, _ = Tensor.max2 ~dim:0 ~keepdim:false distances in
             let max_distance = Tensor.to_float0_exn max_distance in
@@ -72,8 +74,6 @@ module Balltree = struct
             if ((Float.compare dist_to_leaf top_el_dist) < 0 ||
                 (Fheap.length pq < n_neighbours)) then
                 let pq = List.fold d_idx ~init:pq ~f:(fun pq idx -> Fheap.add pq (dist_to_leaf, idx)) in
-                (* TODO: if num_points_leaf > 1, don't do Fheap.add, but something else *)
-                (* let pq = Fheap.add pq (dist_to_leaf, d_idx) in *)
                 if (Fheap.length pq) > n_neighbours then (unsome (Fheap.remove_top pq)) else pq
             else
                 pq
@@ -97,7 +97,7 @@ module Balltree = struct
     (* sklearn-like API: query_balltree(tree, point, n_neighbours
        returns distances, indices  *)
     let query_balltree bt query_point n_neighbours =
-        (* assert (phys_equal (List.length (Tensor.shape query_point)) 1); *)
+        assert (phys_equal (List.length (Tensor.shape query_point)) 1);
         let create_heap =
             let compare_fun (d1, _) (d2, _) =
                 compare_float d2 d1 in
@@ -105,9 +105,9 @@ module Balltree = struct
 
         let pq = create_heap in
         let pq_result = query_balltree_ bt pq query_point n_neighbours in
-        let ll = List.rev (Fheap.to_list pq_result) in
+        (* Make sure to only return up to n_neighbours *)
+        let ll = List.take (List.rev (Fheap.to_list pq_result)) n_neighbours in
         let distances = List.map ll ~f:fst in
-        (* let indices = List.map ll ~f:(fun x -> snd x |> Tensor.to_int0_exn) in *)
         let indices = List.map ll ~f:snd in
         distances, indices
 
