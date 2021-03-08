@@ -8,14 +8,14 @@ module Balltree = struct
     (* ENH: Support more distances. Currently only Euclidean. *)
     type ball = { centroid: Tensor.t; dimension: int; radius: float }
     type tree =
-        | Leaf of Tensor.t * Tensor.t
+        | Leaf of Tensor.t * (int list)
         | Node of (ball * tree * tree)
 
     (* Returns: a tree structure *)
     let rec construct_balltree_ d d_indices =
         let num_points, num_dim = Tensor.shape2_exn d in
         match num_points with
-          | 1 -> Leaf (d, d_indices)
+          | 1 -> Leaf (d, d_indices |> Tensor.to_int1_exn |> Array.to_list)
           | _ ->
             (* The centroid is our median *)
             let median_value, _ = Tensor.median1 d ~dim:0 ~keepdim:false in
@@ -42,12 +42,13 @@ module Balltree = struct
             if num_points_right > 0 && num_points_left > 0 then
                 Node ({centroid=median_value; dimension=c; radius=max_distance}, construct_balltree_ left_subset left_indices, construct_balltree_ right_subset right_indices)
             else if num_points_right > 0 then
-                Leaf (right_subset, right_indices)
+                Leaf (right_subset, right_indices |> Tensor.to_int1_exn |> Array.to_list)
             else
-                Leaf (left_subset, left_indices)
+                Leaf (left_subset, left_indices |> Tensor.to_int1_exn |> Array.to_list)
 
 
     let construct_balltree d =
+        assert (phys_equal (List.length (Tensor.shape d)) 2);
         let d_indices = (Tensor.range ~start:(Torch.Scalar.i 0) ~end_:(Torch.Scalar.i ((fst (Tensor.shape2_exn d) - 1))) ~options:(Torch_core.Kind.T Int64, Torch_core.Device.Cpu)) in
         construct_balltree_ d d_indices
 
@@ -61,7 +62,8 @@ module Balltree = struct
             | Some (x, _) -> x in
         match bt with
         | Leaf (d, d_idx) ->
-            let num_points_leaf, _ = Tensor.shape2_exn d in
+            (*let num_points_leaf, _ = Tensor.shape2_exn d in*)
+            let num_points_leaf = List.length d_idx in
             let dist_to_leaf =
                 if phys_equal num_points_leaf 1 then
                    (Tensor.dist d query_point) |> Tensor.to_float0_exn
@@ -69,8 +71,9 @@ module Balltree = struct
                    (Tensor.dist (Tensor.select ~dim:0 ~index:0 d) query_point) |> Tensor.to_float0_exn in
             if ((Float.compare dist_to_leaf top_el_dist) < 0 ||
                 (Fheap.length pq < n_neighbours)) then
+                let pq = List.fold d_idx ~init:pq ~f:(fun pq idx -> Fheap.add pq (dist_to_leaf, idx)) in
                 (* TODO: if num_points_leaf > 1, don't do Fheap.add, but something else *)
-                let pq = Fheap.add pq (dist_to_leaf, d_idx) in
+                (* let pq = Fheap.add pq (dist_to_leaf, d_idx) in *)
                 if (Fheap.length pq) > n_neighbours then (unsome (Fheap.remove_top pq)) else pq
             else
                 pq
@@ -94,6 +97,7 @@ module Balltree = struct
     (* sklearn-like API: query_balltree(tree, point, n_neighbours
        returns distances, indices  *)
     let query_balltree bt query_point n_neighbours =
+        (* assert (phys_equal (List.length (Tensor.shape query_point)) 1); *)
         let create_heap =
             let compare_fun (d1, _) (d2, _) =
                 compare_float d2 d1 in
@@ -103,7 +107,8 @@ module Balltree = struct
         let pq_result = query_balltree_ bt pq query_point n_neighbours in
         let ll = List.rev (Fheap.to_list pq_result) in
         let distances = List.map ll ~f:fst in
-        let indices = List.map ll ~f:(fun x -> snd x |> Tensor.to_int0_exn) in
+        (* let indices = List.map ll ~f:(fun x -> snd x |> Tensor.to_int0_exn) in *)
+        let indices = List.map ll ~f:snd in
         distances, indices
 
     let rec get_depth_of_ball d =
@@ -121,7 +126,7 @@ module Balltree = struct
             | _ -> x ^ (repeat_string x (i - 1)) in
         let spaces = (repeat_string "-" (Int.pow 2 i)) in
         match d with
-        | Leaf (d, d_idx) -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Tensor.to_string d_idx ~line_size:40) ^ "\n"
+        | Leaf (d, d_idx) -> (List.map d_idx ~f:(fun idx -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Int.to_string idx ^ "\n"))) |> List.to_array |> (String.concat_array ~sep:"\n")
         | Node (_, left, right) ->
             let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in
             let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in

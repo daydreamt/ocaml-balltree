@@ -9,13 +9,19 @@ let bad_points = Tensor.of_float2  [| [| 0.; 0. |]; [| 0.; 0. |] |];;
 let bad_points_bt = Balltree.construct_balltree bad_points;;
 Stdio.print_string (Balltree.get_string_of_ball bad_points_bt);;
 
-(* FIXME: Add multiple results correctly at query time to the heap*)
 let query_bad_point1 = Tensor.of_float2 [| [| 0.; 0.; |] |] |> Tensor.reshape ~shape:[1;-1];;
 let query_bad_point2 = Tensor.of_float2 [| [| 0.; 0.; |] |] |> Tensor.reshape ~shape:[-1;1];;
-(*
-Balltree.query_balltree bad_points_bt query_bad_point1 1;;
-Balltree.query_balltree bad_points_bt query_bad_point2 1;;
-*)
+
+let distances_bad_1, indices_bad_1 = Balltree.query_balltree bad_points_bt query_bad_point1 2;;
+Stdio.print_endline "Potentially problematic indices:";;
+List.iter indices_bad_1 ~f:(fun x -> Stdio.print_endline (Int.to_string x));;
+Stdio.print_endline "Their distances:";;
+List.iter distances_bad_1 ~f:(fun x -> Stdio.print_endline (Float.to_string x));;
+let distances_bad_2, indices_bad_2 = Balltree.query_balltree bad_points_bt query_bad_point2 2;;
+Stdio.print_endline "Potentially problematic indices:";;
+List.iter indices_bad_2 ~f:(fun x -> Stdio.print_endline (Int.to_string x));;
+Stdio.print_endline "Their distances:";;
+List.iter distances_bad_2 ~f:(fun x -> Stdio.print_endline (Float.to_string x));;
 
 (* These ones shouldn't *)
 let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1];;
