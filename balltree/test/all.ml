@@ -13,11 +13,13 @@ let query_bad_point1 = Tensor.of_float1 [| 0.; 0.; |];;
 let query_bad_point2 = Tensor.of_float1 [| 0.; 0.; |];;
 
 let distances_bad_1, indices_bad_1 = Balltree.query_balltree bad_points_bt query_bad_point1 2;;
+assert (List.is_sorted ~compare:Float.compare distances_bad_1;);
 Stdio.print_endline "Potentially problematic indices:";;
 List.iter indices_bad_1 ~f:(fun x -> Stdio.print_endline (Int.to_string x));;
 Stdio.print_endline "Their distances:";;
 List.iter distances_bad_1 ~f:(fun x -> Stdio.print_endline (Float.to_string x));;
 let distances_bad_2, indices_bad_2 = Balltree.query_balltree bad_points_bt query_bad_point2 2;;
+assert (List.is_sorted ~compare:Float.compare distances_bad_2);;
 Stdio.print_endline "Potentially problematic indices:";;
 List.iter indices_bad_2 ~f:(fun x -> Stdio.print_endline (Int.to_string x));;
 Stdio.print_endline "Their distances:";;
@@ -45,6 +47,7 @@ for i=1 to 10 do
     assert (Float.equal (List.hd_exn distances) 0.);
     (* And also have the correct index (starting from 0) *)
     assert (Int.equal (i-1) (List.hd_exn indices));
+    assert (List.is_sorted ~compare:Float.compare distances);
 done
 ;;
 
@@ -56,12 +59,14 @@ for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
     let l1 = List.length distances in
     let l2 = List.length indices in
     Stdio.print_endline (Int.to_string l1);
-    assert ((Int.equal l1 l2) && (Int.equal l2 i))
+    assert ((Int.equal l1 l2) && (Int.equal l2 i));
+    assert (List.is_sorted ~compare:Float.compare distances);
 done;;
 
 
 let bt0 = Balltree.construct_balltree (Tensor.of_float2 [| [|0.; 0.;|]; |]);;
 let distances0, neighbours0 = Balltree.query_balltree bt0 (Tensor.of_float1 [| 0.; 1.;|]) 1;;
+assert (List.is_sorted ~compare:Float.compare distances0);;
 Tensor.dist (Tensor.of_float1 [| 0.; 1.;|]) (Tensor.of_float1 [|0.; 0.;|]);;
 
 let tiny_list = [ [1.; 2.;]; [1.; 3.;]; [0.5; 0.3;]; [4.; 5.;] ]
@@ -72,6 +77,7 @@ let bt1 = Balltree.construct_balltree d;;
 
 let bt2 = Balltree.construct_balltree (Tensor.of_float2 [| [|0.; 0.;|]; [| 1.; 2. |] |]);;
 let distances2, _ = Balltree.query_balltree bt2 (Tensor.of_float1 [| 0.; 1.;|]) 1;;
+assert (List.is_sorted ~compare:Float.compare distances2);;
 Stdio.print_endline (Float.to_string (List.hd_exn distances2));;
 
 let point3_array = [| [|1.; 2.;|]; [|1.; 3.;|]; [|4.; 5.;|] |] ;;
