@@ -4,6 +4,12 @@ open Core_kernel
 
 (*Examples/ tests *)
 
+(* This one used to cause a crash too *)
+let odt = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 0) ~end_:(Torch.Scalar.i 2) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1];;
+let odt_bt = Balltree.construct_balltree odt;;
+let query_point = (Tensor.of_float1 [|Float.of_int 2|]);;
+let (_, _) = Balltree.query_balltree odt_bt query_point 3;;
+
 (* This one used to cause a crash: leaves can now contain more than one element *)
 let bad_points = Tensor.of_float2  [| [| 0.; 0. |]; [| 0.; 0. |] |];;
 let bad_points_bt = Balltree.construct_balltree bad_points;;
@@ -28,7 +34,6 @@ List.iter distances_bad_2 ~f:(fun x -> Stdio.print_endline (Float.to_string x));
 (* These ones shouldn't *)
 let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1];;
 let one_d_tensor_reverse = Tensor.reshape (Tensor.of_float1 ~device:Torch_core.Device.Cpu [|4.;5.;6.;7.;8.;9.;10.;1.;2.;3.;|]) ~shape:[-1;1];;
-
 let one_d_bt = Balltree.construct_balltree one_d_tensor;;
 let one_d_reverse_bt = Balltree.construct_balltree one_d_tensor_reverse;;
 Stdio.print_string (Balltree.get_string_of_ball one_d_bt);;
@@ -36,14 +41,24 @@ Stdio.print_string (Balltree.get_string_of_ball one_d_reverse_bt);;
 (* It will not be the same, because the indices are different, but the values should be the same *)
 (* assert (String.equal (get_string_of_ball one_d_bt) (get_string_of_ball one_d_reverse_bt)) *)
 
-let query_point = (Tensor.of_float2 [|[|5.3|]|]);;
 
+let distances, indices = (Balltree.query_balltree one_d_bt (Tensor.of_float1 [|6.|]) 4);;
+assert (List.is_sorted ~compare:Float.compare distances);;
+
+let query_point = Tensor.of_float2 [|[|5.3|]|];;
 (* Test that the balltree can find the nearest point in the 1d case*)
 Stdio.print_endline "checking we can retrieve the nearest neighbour in 1d case";
 for i=1 to 10 do
     let query_point = Tensor.of_float1 [| (Float.of_int i) |] in
     let distances, indices = Balltree.query_balltree one_d_bt query_point 1 in
     (* The number found should be i *)
+    (* Stdio.print_endline ("i: " ^ (Int.to_string i));
+    Stdio.print_endline ("Number of distances returned: " ^ (Int.to_string (List.length distances)));
+    List.iter distances ~f:(fun x -> Stdio.print_string ((Float.to_string x) ^ " "));
+    List.iter indices ~f:(fun x -> Stdio.print_string ((Int.to_string x) ^ " "));
+    Stdio.print_endline "";
+    Stdio.print_endline ("closest distance: " ^ (Float.to_string (List.hd_exn distances)));
+    *)
     assert (Float.equal (List.hd_exn distances) 0.);
     (* And also have the correct index (starting from 0) *)
     assert (Int.equal (i-1) (List.hd_exn indices));
@@ -58,8 +73,17 @@ for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
     let distances, indices = query_results in
     let l1 = List.length distances in
     let l2 = List.length indices in
-    Stdio.print_endline (Int.to_string l1);
+    (* Stdio.print_endline (Int.to_string l1);*)
     assert ((Int.equal l1 l2) && (Int.equal l2 i));
+    (*
+    Stdio.print_endline ("distances for " ^ (Int.to_string i));
+    List.iter distances ~f:(fun x -> Stdio.print_string ((Float.to_string x) ^ " "));
+    Stdio.print_endline ("\nindices for " ^ (Int.to_string i));
+    List.iter indices ~f:(fun x -> Stdio.print_string ((Int.to_string x) ^ " "));
+
+    Stdio.print_endline "\nprint tree";
+    Stdio.print_endline (Balltree.get_string_of_ball one_d_bt);
+    *)
     assert (List.is_sorted ~compare:Float.compare distances);
 done;;
 

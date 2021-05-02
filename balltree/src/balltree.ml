@@ -19,7 +19,7 @@ module Balltree = struct
           | _ ->
             (* The centroid is our median *)
             let median_value, _ = Tensor.median1 d ~dim:0 ~keepdim:false in
-            (* Compute the radius: maximum distance of any datapoint 
+            (* Compute the radius: maximum distance of any datapoint
             ENH: To use other functions, we should probably use the same distance function everywhere
                  and not sometimes Tensor.norm2, and sometimes Tensor.dist *)
             let distances = Tensor.norm2 Tensor.(d - median_value) ~p:(Torch.Scalar.i 2) ~dim:[1] ~keepdim:false in
@@ -56,6 +56,8 @@ module Balltree = struct
 
 
     let unsome = function Some a -> a | None -> raise (Not_found_s (Sexp.of_string "should not happen"))
+    let rec keep_upto pq n_neighbours =
+      if (Fheap.length pq) > n_neighbours then (keep_upto (unsome (Fheap.remove_top pq)) n_neighbours) else pq
 
     (* See https://en.wikipedia.org/wiki/Ball_tree#Pseudocode_2 *)
     let rec query_balltree_ bt pq query_point n_neighbours =
@@ -74,7 +76,8 @@ module Balltree = struct
             if ((Float.compare dist_to_leaf top_el_dist) < 0 ||
                 (Fheap.length pq < n_neighbours)) then
                 let pq = List.fold d_idx ~init:pq ~f:(fun pq idx -> Fheap.add pq (dist_to_leaf, idx)) in
-                if (Fheap.length pq) > n_neighbours then (unsome (Fheap.remove_top pq)) else pq
+                (* Remove the maximum distance elements, after adding new ones *)
+                keep_upto pq n_neighbours
             else
                 pq
         | Node ({centroid=median_value; dimension=c; radius=max_distance_radius}, left, right) ->
@@ -93,7 +96,6 @@ module Balltree = struct
                     let pq2 = query_balltree_ left pq1 query_point n_neighbours in
                     pq2
 
-
     (* sklearn-like API: query_balltree(tree, point, n_neighbours
        returns distances, indices  *)
     let query_balltree bt query_point n_neighbours =
@@ -106,7 +108,9 @@ module Balltree = struct
         let pq = create_heap in
         let pq_result = query_balltree_ bt pq query_point n_neighbours in
         (* Make sure to only return up to n_neighbours *)
-        let ll = List.take (List.rev (Fheap.to_list pq_result)) n_neighbours in
+        (* let ll = List.take (List.sort ~compare:(fun x y -> Float.compare (fst x) (fst y)) (Fheap.to_list pq_result)) n_neighbours in
+        *)
+        let ll = (List.sort ~compare:(fun x y -> Float.compare (fst x) (fst y)) (Fheap.to_list pq_result)) in
         let distances = List.map ll ~f:fst in
         let indices = List.map ll ~f:snd in
         distances, indices
@@ -127,14 +131,15 @@ module Balltree = struct
         let spaces = (repeat_string "-" (Int.pow 2 i)) in
         match d with
         | Leaf (d, d_idx) -> (List.map d_idx ~f:(fun idx -> "=>" ^ spaces ^ (Tensor.to_string d ~line_size:40) ^ "idx: " ^ (Int.to_string idx ^ "\n"))) |> List.to_array |> (String.concat_array ~sep:"\n")
-        | Node (_, left, right) ->
+        | Node ({centroid=c; dimension=d; radius=max_distance}, left, right) ->
             let left_substring = (get_string_of_ball_ left (i + 1) max_depth) in
+            let balltree_string = "radius: " ^ (Float.to_string max_distance) ^ " dimension= " ^ (Int.to_string d) ^ " centroid=" ^ (Tensor.to_string ~line_size:40 c) ^ " " in
             let right_substring = (get_string_of_ball_ right (i + 1) max_depth) in
-            left_substring ^ "\n" ^ (repeat_string "*" (Int.pow 2 (max_depth - i))) ^ "split number: " ^ (Int.to_string i) ^ (repeat_string "*" (Int.pow 2 (max_depth - i))) ^ "\n" ^ right_substring
+            left_substring ^ "\n" ^ (repeat_string "*" (Int.pow 2 (max_depth - i))) ^ "split number: " ^ (Int.to_string i) ^ (repeat_string "*" (Int.pow 2 (max_depth - i))) ^ balltree_string ^ "\n" ^ right_substring
 
     let get_string_of_ball d =
         let depth = get_depth_of_ball d in
-        (*     let level_of_indentation = 2 in 
+        (*     let level_of_indentation = 2 in
         let n_spaces = depth * level_of_indentation in *)
         get_string_of_ball_ d 0 depth
 
