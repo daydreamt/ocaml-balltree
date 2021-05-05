@@ -1,14 +1,17 @@
 (lang dune 2.8)
 (name balltree)
+(version 0.0.1)
 
 (generate_opam_files true)
 
-(authors "Nikolaos")
+(source (github daydreamt/balltree.ml))
 
+(authors "Nikolaos")
 (maintainers "Nikolaos")
+
 (package
  (name balltree)
- (synopsis "OCaml web framework")
+ (synopsis "OCaml balltree implementation")
  (description
    "balltree.")
  (depends
