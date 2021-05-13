@@ -23,3 +23,20 @@
    opium
    ppx_sexp_conv
    ))
+
+(package
+ (name baas)
+ (synopsis "OCaml balltree implementation")
+ (description
+   "balltree.")
+ (depends
+  (ocaml
+   (>= 4.08))
+   torch
+   core
+   balltree
+   opium
+   bert.model
+   bert.tokenize
+   ppx_sexp_conv
+   ))
