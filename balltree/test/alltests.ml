@@ -69,14 +69,11 @@ let check_if_single_i_one_d_returns_n_2 one_d_bt i =
     let distances, indices = query_results in
     let l1 = List.length distances in
     let l2 = List.length indices in
-    (* Stdio.print_endline (Int.to_string l1);*)
-
     (*
     Stdio.print_endline ("distances for " ^ (Int.to_string i));
     List.iter distances ~f:(fun x -> Stdio.print_string ((Float.to_string x) ^ " "));
     Stdio.print_endline ("\nindices for " ^ (Int.to_string i));
     List.iter indices ~f:(fun x -> Stdio.print_string ((Int.to_string x) ^ " "));
-
     Stdio.print_endline "\nprint tree";
     Stdio.print_endline (Balltree.get_string_of_ball one_d_bt);
     *)
@@ -104,8 +101,6 @@ let test_is_sorted2 _ =
     assert_equal true (List.is_sorted ~compare:Float.compare distances2)
 
 let test_euclidean_distances _ = 
-    (* let bt1 = Balltree.construct_balltree (Tensor.of_float2 [| [|1.; 2.;|]; [|1.; 3.;|]; [|0.5; 0.3;|]; [|4.; 5.;|] |]) in *)
-
     let point3_array = [| [|1.; 2.;|]; [|1.; 3.;|]; [|4.; 5.;|] |] in
     let query_point3 = (Tensor.of_float1 [| 0.; 0.;|]) in
     let query_point3_dimlist = Tensor.shape query_point3 in
@@ -116,19 +111,8 @@ let test_euclidean_distances _ =
     let distances3, _ = Balltree.query_balltree bt3 query_point3 3 in
     let zeroes = Array.map2_exn (distances3 |> Array.of_list) real_distances3 ~f:(Float.sub) in
     let array_sum = Array.reduce_exn zeroes ~f:(fun x y -> x +. y) in
-    (*
-    Array.iter2_exn real_distances3 (distances3 |> Array.of_list) ~f:(fun x y-> (Stdio.print_endline ((Float.to_string x) ^ " - " ^ (Float.to_string y);))) ;
-    Array.map2_exn (distances3 |> Array.of_list) real_distances3 ~f:(Float.sub);
-    Stdio.print_endline "Comparing real distances, with balltree distances (Should all be 0)";
-    Array.iter (Array.map2_exn (distances3 |> Array.of_list) real_distances3 ~f:(Float.sub)) ~f:(fun x -> Stdio.print_endline (Float.to_string x));
-    *)
     assert_equal true ((Float.compare (Float.abs array_sum) Float.epsilon_float) < 0)
 
-(*
-let bt4 = Balltree.construct_balltree (Tensor.of_float2 [| [|1.; 2.;|]; [|1.; 3.;|]; [|4.; 5.;|] |]);;
-let distances4, nn4 = Balltree.query_balltree bt4 (Tensor.of_float1 [| 0.; 0.;|] ) 1;;
-Balltree. construct_balltree (Tensor.of_float2  [| [|1.; 2.;|]; [|1.; 3.;|] |]);;
-*)
 
 let suite =
     "TestBalltrees" >::: [
