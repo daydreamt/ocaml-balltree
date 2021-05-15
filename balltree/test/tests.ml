@@ -24,7 +24,6 @@ let test_previously_crashing_ones  _ =
     List.iter indices_bad_2 ~f:(fun x -> Stdio.print_endline (Int.to_string x));
     Stdio.print_endline "Their distances:";
     List.iter distances_bad_2 ~f:(fun x -> Stdio.print_endline (Float.to_string x));
-
     assert_equal true ((List.is_sorted ~compare:Float.compare distances_bad_1) &&  (List.is_sorted ~compare:Float.compare distances_bad_2))
 
 
@@ -35,57 +34,42 @@ let test_one_d_single_reverse _ =
     let one_d_reverse_bt = Balltree.construct_balltree one_d_tensor_reverse in
     Stdio.print_string (Balltree.get_string_of_ball one_d_bt);
     Stdio.print_string (Balltree.get_string_of_ball one_d_reverse_bt);
-    (* It will not be the same, because the indices are different, but the values should be the same *)
+    (* ENH: It will not be the same, because the indices are different, but the values should be the same *)
     (* assert (String.equal (get_string_of_ball one_d_bt) (get_string_of_ball one_d_reverse_bt)) *)
-
     let distances, indices = (Balltree.query_balltree one_d_bt (Tensor.of_float1 [|6.|]) 4) in
     let _ = indices in
     assert_equal true (List.is_sorted ~compare:Float.compare distances)
 
 
-let check_if_single_i_one_d_returns_n i =
+let check_if_exact_retrieval i =
+
     let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1] in
     let query_point = Tensor.of_float1 [| (Float.of_int i) |] in
     let one_d_bt = Balltree.construct_balltree one_d_tensor in
     let distances, indices = Balltree.query_balltree one_d_bt query_point 1 in
     (* The number found should be i *)
-    (* Stdio.print_endline ("i: " ^ (Int.to_string i));
-    Stdio.print_endline ("Number of distances returned: " ^ (Int.to_string (List.length distances)));
-    List.iter distances ~f:(fun x -> Stdio.print_string ((Float.to_string x) ^ " "));
-    List.iter indices ~f:(fun x -> Stdio.print_string ((Int.to_string x) ^ " "));
-    Stdio.print_endline "";
-    Stdio.print_endline ("closest distance: " ^ (Float.to_string (List.hd_exn distances)));
-    *)
     ((Float.equal (List.hd_exn distances) 0.) && (Int.equal (i-1) (List.hd_exn indices)) && (List.is_sorted ~compare:Float.compare distances))
     
-let test_number_neighbours1 _ =
+let check_exact_retrieval_1d _ =
     let all_good = 
-        List.map ~f:check_if_single_i_one_d_returns_n (List.range 1 10 ~stop:`inclusive)
+        List.map ~f:check_if_exact_retrieval (List.range 1 10 ~stop:`inclusive)
         |> List.reduce_exn ~f:(fun x y -> x && y) in
         assert_equal true all_good
 
-let check_if_single_i_one_d_returns_n_2 one_d_bt i =
+let check_n_returned one_d_bt i =
     let query_results = (Balltree.query_balltree one_d_bt (Tensor.of_float1 [|Float.of_int i|]) i) in
     let distances, indices = query_results in
     let l1 = List.length distances in
     let l2 = List.length indices in
-    (*
-    Stdio.print_endline ("distances for " ^ (Int.to_string i));
-    List.iter distances ~f:(fun x -> Stdio.print_string ((Float.to_string x) ^ " "));
-    Stdio.print_endline ("\nindices for " ^ (Int.to_string i));
-    List.iter indices ~f:(fun x -> Stdio.print_string ((Int.to_string x) ^ " "));
-    Stdio.print_endline "\nprint tree";
-    Stdio.print_endline (Balltree.get_string_of_ball one_d_bt);
-    *)
     (List.is_sorted ~compare:Float.compare distances) && ((Int.equal l1 l2) && (Int.equal l2 i))
     
-let test_number_neighbours2 _ =
+let test_number_neighbours_returned _ =
     Stdio.print_endline "checking we retrieve as many neighbours as n_neighbours";
     let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1] in
     let one_d_bt = Balltree.construct_balltree one_d_tensor in
     let n = fst (Tensor.shape2_exn one_d_tensor) in
     let all_good = 
-        List.map ~f:(fun i -> check_if_single_i_one_d_returns_n_2 one_d_bt i) (List.range 1 n ~stop:`inclusive)
+        List.map ~f:(fun i -> check_n_returned one_d_bt i) (List.range 1 n ~stop:`inclusive)
         |> List.reduce_exn ~f:(fun x y -> x && y) in
         assert_equal true all_good        
 
@@ -105,7 +89,6 @@ let test_euclidean_distances _ =
     let query_point3 = (Tensor.of_float1 [| 0.; 0.;|]) in
     let query_point3_dimlist = Tensor.shape query_point3 in
     Stdio.print_endline ("Dimensions of query_point3:" ^ (query_point3_dimlist |> List.map ~f:Int.to_string |> (String.concat~sep:"\t"))) ;
-
     let real_distances3 = Array.map point3_array ~f:(fun x -> Tensor.dist (Tensor.of_float1 x) query_point3) |> Array.map ~f:(Tensor.to_float0_exn) in
     let bt3 = Balltree.construct_balltree (Tensor.of_float2 point3_array) in
     let distances3, _ = Balltree.query_balltree bt3 query_point3 3 in
@@ -118,8 +101,8 @@ let suite =
     "TestBalltrees" >::: [
         "test_previously_crashing_cases" >:: test_previously_crashing_ones;
         "test_one_d_single_reverse" >:: test_one_d_single_reverse;
-        "test_n_returned1" >:: test_number_neighbours1;
-        "test_n_returned2" >:: test_number_neighbours2;
+        "check_exact_retrieval_1d" >:: check_exact_retrieval_1d;
+        "test_n_returned" >:: test_number_neighbours_returned;
         "test_is_sorted1" >:: test_is_sorted1;
         "test_is_sorted2" >:: test_is_sorted2;
         "test_euclidean_distances" >:: test_euclidean_distances;
