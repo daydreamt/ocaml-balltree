@@ -1,0 +1,4 @@
+(tests
+ (names all)
+ (libraries balltree torch torch.core core core_kernel.fheap ppx_sexp_conv open ounit2)
+ (package balltree))

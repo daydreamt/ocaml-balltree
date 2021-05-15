@@ -58,20 +58,19 @@ let check_if_single_i_one_d_returns_n i =
     *)
     ((Float.equal (List.hd_exn distances) 0.) && (Int.equal (i-1) (List.hd_exn indices)) && (List.is_sorted ~compare:Float.compare distances))
     
-let test_number_neighbours _ =
+let test_number_neighbours1 _ =
     let all_good = 
         List.map ~f:check_if_single_i_one_d_returns_n (List.range 1 10 ~stop:`inclusive)
         |> List.reduce_exn ~f:(fun x y -> x && y) in
         assert_equal true all_good
-(*
-Stdio.print_endline "checking we retrieve as many neighbours as n_neighbours";
-for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
+
+let check_if_single_i_one_d_returns_n_2 one_d_bt i =
     let query_results = (Balltree.query_balltree one_d_bt (Tensor.of_float1 [|Float.of_int i|]) i) in
     let distances, indices = query_results in
     let l1 = List.length distances in
     let l2 = List.length indices in
     (* Stdio.print_endline (Int.to_string l1);*)
-    assert ((Int.equal l1 l2) && (Int.equal l2 i));
+
     (*
     Stdio.print_endline ("distances for " ^ (Int.to_string i));
     List.iter distances ~f:(fun x -> Stdio.print_string ((Float.to_string x) ^ " "));
@@ -81,10 +80,18 @@ for i=1 to (fst (Tensor.shape2_exn one_d_tensor)) do
     Stdio.print_endline "\nprint tree";
     Stdio.print_endline (Balltree.get_string_of_ball one_d_bt);
     *)
-    assert (List.is_sorted ~compare:Float.compare distances);
-done;;
-
-
+    (List.is_sorted ~compare:Float.compare distances) && ((Int.equal l1 l2) && (Int.equal l2 i))
+    
+let test_number_neighbours2 _ =
+    Stdio.print_endline "checking we retrieve as many neighbours as n_neighbours";
+    let one_d_tensor = Tensor.reshape (Tensor.range ~start:(Torch.Scalar.i 1) ~end_:(Torch.Scalar.i 10) ~options:(Torch_core.Kind.T Float, Torch_core.Device.Cpu)) ~shape:[-1;1] in
+    let one_d_bt = Balltree.construct_balltree one_d_tensor in
+    let n = fst (Tensor.shape2_exn one_d_tensor) in
+    let all_good = 
+        List.map ~f:(fun i -> check_if_single_i_one_d_returns_n_2 one_d_bt i) (List.range 1 n ~stop:`inclusive)
+        |> List.reduce_exn ~f:(fun x y -> x && y) in
+        assert_equal true all_good        
+(*
 let bt0 = Balltree.construct_balltree (Tensor.of_float2 [| [|0.; 0.;|]; |]);;
 let distances0, neighbours0 = Balltree.query_balltree bt0 (Tensor.of_float1 [| 0.; 1.;|]) 1;;
 assert (List.is_sorted ~compare:Float.compare distances0);;
@@ -124,7 +131,8 @@ let suite =
     "TestBalltrees" >::: [
         "test_previously_crashing_cases" >:: test_previously_crashing_ones;
         "test_one_d_single_reverse" >:: test_one_d_single_reverse;
-        "test_n_returned" >:: test_number_neighbours;
+        "test_n_returned1" >:: test_number_neighbours1;
+        "test_n_returned2" >:: test_number_neighbours2;
     ]
 let () =
     run_test_tt_main suite
