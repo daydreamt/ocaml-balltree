@@ -14,7 +14,7 @@ RUN opam pin add -y . && \
 RUN sh -c 'eval `opam config env` dune build .' && \
  sh -c 'eval `opam config env` dune install'
 
-WORKDIR ../learn_search
+WORKDIR ../ocaml-balltree
 ADD balltree.opam .
 ADD . .
 RUN sudo chown -R opam:opam . && \
@@ -24,11 +24,11 @@ sh -c 'eval `opam config env` dune build baas/baas.exe'
 
 FROM base
 WORKDIR /app
-COPY --from=0 /home/opam/learn_search/_build/default/baas/baas.exe .
-COPY --from=0 /home/opam/learn_search/baas/bert-base-uncased-vocab.txt .
-COPY --from=0 /home/opam/learn_search/baas/distilbert-base-uncased-rust_model.ot .
-COPY --from=0 /home/opam/learn_search/baas/good_first_1000_sentence_embeddings.txt .
-COPY --from=0 /home/opam/learn_search/baas/works_of_shakespeare.txt .
+COPY --from=0 /home/opam/ocaml-balltree/_build/default/baas/baas.exe .
+COPY --from=0 /home/opam/ocaml-balltree/baas/bert-base-uncased-vocab.txt .
+COPY --from=0 /home/opam/ocaml-balltree/baas/distilbert-base-uncased-rust_model.ot .
+COPY --from=0 /home/opam/ocaml-balltree/baas/good_first_1000_sentence_embeddings.txt .
+COPY --from=0 /home/opam/ocaml-balltree/baas/works_of_shakespeare.txt .
 
 
 CMD WEIGHT_PATH="./distilbert-base-uncased-rust_model.ot" VOCAB_PATH="./bert-base-uncased-vocab.txt" EMBEDDINGS_PATH="./good_first_1000_sentence_embeddings.txt" TEXT_PATH="./works_of_shakespeare.txt" ./baas.exe
