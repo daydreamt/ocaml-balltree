@@ -37,6 +37,6 @@ let () =
     let tokenizer = Tokenizer.create vocab ~lower_case:false in
 
     Out_channel.with_file
-      ~append:true
+      ~append:false
       output_path
       ~f:(fun outc -> In_channel.read_lines input_path |> List.iter ~f:(fun x -> (get_embedding model tokenizer x) |>   Tensor.to_float1_exn |> (Array.map ~f:Float.to_string) |> (String.concat_array ~sep:"\t") |> fprintf outc "%s\n"))

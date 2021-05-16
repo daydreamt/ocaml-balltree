@@ -7,3 +7,6 @@ _build
 *works_of_shakespeare.txt
 *sentence_embeddings.txt
 *ot
+data/distilbert-base-uncased-rust_model.ot
+data/bert-base-uncased-vocab.txt
+data/works_of_shakespeare.txt
