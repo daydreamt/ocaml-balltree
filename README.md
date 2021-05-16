@@ -14,7 +14,9 @@ Also has an example webserver application, built on top ("balltree as a service"
 ### To build and run the example container:
 > sudo docker build -t balltree .
 
+
 > sudo docker run -p 3000:3000 balltree
+(Takes 4+GB of RAM).
 
 > $ curl http://localhost:3000/getnn/Right%20noble%20Burgundy,/10
 ```json 
