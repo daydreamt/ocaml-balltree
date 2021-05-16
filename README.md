@@ -16,6 +16,7 @@ Also has an example webserver application, built on top ("balltree as a service"
 
 
 > sudo docker run -p 3000:3000 balltree
+
 (Takes 4+GB of RAM).
 
 > $ curl http://localhost:3000/getnn/Right%20noble%20Burgundy,/10
