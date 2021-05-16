@@ -26,7 +26,7 @@
 
 (package
  (name baas)
- (synopsis "OCaml balltree implementation")
+ (synopsis "balltree as a server (baas) is a simple opium-based webserver demonstrating web-based balltree queries")
  (description
    "balltree.")
  (depends

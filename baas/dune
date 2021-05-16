@@ -1,0 +1,10 @@
+(executable
+ (modules baas)
+ (name baas)
+ (libraries opium torch core balltree bert.model bert.tokenize))
+
+(executable
+  (name create_embeddings)
+  (modules create_embeddings)
+  (libraries torch core bert.model bert.tokenize))
+

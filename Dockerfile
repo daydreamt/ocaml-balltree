@@ -27,10 +27,10 @@ WORKDIR /app
 COPY --from=0 /home/opam/ocaml-balltree/_build/default/baas/baas.exe .
 COPY --from=0 /home/opam/ocaml-balltree/baas/bert-base-uncased-vocab.txt .
 COPY --from=0 /home/opam/ocaml-balltree/baas/distilbert-base-uncased-rust_model.ot .
-COPY --from=0 /home/opam/ocaml-balltree/baas/good_first_1000_sentence_embeddings.txt .
-COPY --from=0 /home/opam/ocaml-balltree/baas/works_of_shakespeare.txt .
+COPY --from=0 /home/opam/ocaml-balltree/baas/sentence_embeddings.txt .
+COPY --from=0 /home/opam/ocaml-balltree/baas/input_sentences.txt .
 
 
-CMD WEIGHT_PATH="./distilbert-base-uncased-rust_model.ot" VOCAB_PATH="./bert-base-uncased-vocab.txt" EMBEDDINGS_PATH="./good_first_1000_sentence_embeddings.txt" TEXT_PATH="./works_of_shakespeare.txt" ./baas.exe
+CMD WEIGHT_PATH="./distilbert-base-uncased-rust_model.ot" VOCAB_PATH="./bert-base-uncased-vocab.txt" EMBEDDINGS_PATH="./sentence_embeddings.txt" TEXT_PATH="./input_sentences.txt" ./baas.exe
 EXPOSE 3000
 
