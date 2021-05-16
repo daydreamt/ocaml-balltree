@@ -22,4 +22,5 @@ You could alternatively use data similar to input_sentences.txt by:
 
 We only keep 1000 sentences, since the (distil)bert embeddings are still high dimensional.
 > $ du -sh sentence_embeddings.txt
+
 > 574M	sentence_embeddings.txt
