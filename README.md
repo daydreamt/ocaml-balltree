@@ -2,14 +2,16 @@ Balltree data structure implemented in ocaml-torch. Currently only supports Eucl
 
 Also has an example webserver application, built on top ("balltree as a service").
 
-# TO DO:
+### TO DO:
 [] more/ arbitrary distances
+
 [] serialization to disk
+
 [] comparisons with sklearn
 
 
 
-# To build and run the container:
+### To build and run the container:
 sudo docker build -t balltree .
 sudo docker run -p 3000:3000 balltree
 
