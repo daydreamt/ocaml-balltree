@@ -38,4 +38,3 @@ COPY --from=0 /home/opam/ocaml-balltree/data/input_sentences.txt .
 
 CMD WEIGHT_PATH="./distilbert-base-uncased-rust_model.ot" VOCAB_PATH="./bert-base-uncased-vocab.txt" EMBEDDINGS_PATH="./sentence_embeddings.txt" TEXT_PATH="./input_sentences.txt" ./baas.exe
 EXPOSE 3000
-

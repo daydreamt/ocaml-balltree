@@ -2,7 +2,7 @@ Balltree data structure implemented in ocaml-torch. Currently only supports Eucl
 
 Also has an example webserver application, built on top ("balltree as a service").
 
-### TO DO:
+### Planned:
 [] more/ arbitrary distances
 
 [] serialization to disk
@@ -11,9 +11,10 @@ Also has an example webserver application, built on top ("balltree as a service"
 
 
 
-### To build and run the container:
-sudo docker build -t balltree .
-sudo docker run -p 3000:3000 balltree
+### To build and run the example container:
+> sudo docker build -t balltree .
+
+> sudo docker run -p 3000:3000 balltree
 
 
 You could alternatively use data similar to input_sentences.txt by:

@@ -1,4 +1,4 @@
-(* This file is essentially derivative work of https://github.com/LaurentMazare/ocaml-bert/blob/master/src/model/distilbert.ml due to the get_embedding function, so it has the same license
+(* get_embedding function is essentially derivative work of https://github.com/LaurentMazare/ocaml-bert/blob/master/src/model/distilbert.ml
 *)
 
 open Core
@@ -40,6 +40,3 @@ let () =
       ~append:true
       output_path
       ~f:(fun outc -> In_channel.read_lines input_path |> List.iter ~f:(fun x -> (get_embedding model tokenizer x) |>   Tensor.to_float1_exn |> (Array.map ~f:Float.to_string) |> (String.concat_array ~sep:"\t") |> fprintf outc "%s\n"))
-
-
-
