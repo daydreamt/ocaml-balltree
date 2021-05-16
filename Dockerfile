@@ -23,17 +23,17 @@ RUN sudo chown -R opam:opam . && \
 sh -c 'eval `opam config env` dune build baas/baas.exe'
 
 # get the distilbert model weights and vocabulary (see https://github.com/LaurentMazare/ocaml-bert/blob/master/examples/distilbert.ml#L8)
-RUN wget -P baas/ https://cdn.huggingface.co/distilbert-base-uncased-rust_model.ot https://cdn.huggingface.co/bert-base-uncased-vocab.txt
-RUN sh -c 'eval `opam config env` dune exec baas/create_embeddings.exe baas/distilbert-base-uncased-rust_model.ot baas/bert-base-uncased-vocab.txt baas/input_sentences.txt baas/sentence_embeddings.txt'
+RUN wget -P data/ https://cdn.huggingface.co/distilbert-base-uncased-rust_model.ot https://cdn.huggingface.co/bert-base-uncased-vocab.txt
+RUN sh -c 'eval `opam config env` dune exec baas/create_embeddings.exe data/distilbert-base-uncased-rust_model.ot data/bert-base-uncased-vocab.txt data/input_sentences.txt data/sentence_embeddings.txt'
 
 
 FROM base
 WORKDIR /app
 COPY --from=0 /home/opam/ocaml-balltree/_build/default/baas/baas.exe .
-COPY --from=0 /home/opam/ocaml-balltree/baas/bert-base-uncased-vocab.txt .
-COPY --from=0 /home/opam/ocaml-balltree/baas/distilbert-base-uncased-rust_model.ot .
-COPY --from=0 /home/opam/ocaml-balltree/baas/sentence_embeddings.txt .
-COPY --from=0 /home/opam/ocaml-balltree/baas/input_sentences.txt .
+COPY --from=0 /home/opam/ocaml-balltree/data/bert-base-uncased-vocab.txt .
+COPY --from=0 /home/opam/ocaml-balltree/data/distilbert-base-uncased-rust_model.ot .
+COPY --from=0 /home/opam/ocaml-balltree/data/sentence_embeddings.txt .
+COPY --from=0 /home/opam/ocaml-balltree/data/input_sentences.txt .
 
 
 CMD WEIGHT_PATH="./distilbert-base-uncased-rust_model.ot" VOCAB_PATH="./bert-base-uncased-vocab.txt" EMBEDDINGS_PATH="./sentence_embeddings.txt" TEXT_PATH="./input_sentences.txt" ./baas.exe
