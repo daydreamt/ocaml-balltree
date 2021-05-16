@@ -60,11 +60,9 @@ let get_balltree_nearest_neighbour_handler fp model tokenizer bt req =
   let query_string = (Router.param req "string") in
   let query_embedding = query_string |> (get_embedding model tokenizer) in
   let distances, indices = Balltree.query_balltree bt query_embedding n_neighbours in
-  let line_results = List.map indices ~f:(fun index -> "Line: " ^ (Int.to_string index) ^" - " ^ (get_line_of_file fp index)) |> (String.concat~sep:"\n") in
-  let distance_results = List.map distances ~f:Float.to_string |> String.concat ~sep:"\n" in
-  "Query: " ^ query_string ^ "\n" ^ line_results ^ "--------------------------------------------------------------------\nAnd now now all the distances in ascending order:\n" ^ distance_results
-  |> Response.of_plain_text
-  |> Lwt.return
+  let retrieved_lines = List.map indices ~f:(fun index -> (get_line_of_file fp index)) in
+  let json : Yojson.Safe.t = `Assoc [ "query", `String query_string; "n_neighbours", `Int n_neighbours; "distances", `List (List.map ~f:(fun x -> `Float x) distances); "indices", `List (List.map ~f:(fun x -> `Int x) indices); "matched_lines", `List (List.map ~f:(fun x -> `String x) retrieved_lines)] in
+  Response.of_json json |> Lwt.return
 ;;
    
 let _ =
