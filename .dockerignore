@@ -3,3 +3,7 @@
 *.txt
 *_build
 _build
+*bert-base-uncased-vocab.txt
+*works_of_shakespeare.txt
+*sentence_embeddings.txt
+*ot

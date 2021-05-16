@@ -22,6 +22,11 @@ RUN sudo chown -R opam:opam . && \
  opam install dune core core_kernel base opium ppx_expect ppx_sexp_conv re stdio torch uutf yojson bert && \
 sh -c 'eval `opam config env` dune build baas/baas.exe'
 
+# get the distilbert model weights and vocabulary (see https://github.com/LaurentMazare/ocaml-bert/blob/master/examples/distilbert.ml#L8)
+RUN wget -P baas/ https://cdn.huggingface.co/distilbert-base-uncased-rust_model.ot https://cdn.huggingface.co/bert-base-uncased-vocab.txt
+RUN sh -c 'eval `opam config env` dune exec baas/create_embeddings.exe baas/distilbert-base-uncased-rust_model.ot baas/bert-base-uncased-vocab.txt baas/input_sentences.txt baas/sentence_embeddings.txt'
+
+
 FROM base
 WORKDIR /app
 COPY --from=0 /home/opam/ocaml-balltree/_build/default/baas/baas.exe .
