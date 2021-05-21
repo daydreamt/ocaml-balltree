@@ -1,5 +1,4 @@
 FROM ocaml/opam:fedora-33-ocaml-4.12 as base
-#RUN sudo apk add m4 git libffi libffi-dev zlib zlib-dev libev-dev linux-headers zlib-dev libc6-compat
 RUN sudo yum install libffi-devel libev-devel libffi zlib zlib-devel -y
 
 RUN opam switch 4.12 && \
@@ -7,10 +6,10 @@ RUN opam switch 4.12 && \
 
 RUN git clone https://github.com/LaurentMazare/ocaml-bert
 WORKDIR ocaml-bert
-RUN opam pin add -y . && \ 
+RUN opam pin add -y . && \
  opam update && \
  opam install dune && \
-  eval $(opam env)
+ eval $(opam env)
 RUN sh -c 'eval `opam config env` dune build .' && \
  sh -c 'eval `opam config env` dune install'
 
