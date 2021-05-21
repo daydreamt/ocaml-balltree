@@ -1,0 +1,4 @@
+(executable
+  (name example_make_balltree_from_file)
+  (modules example_make_balltree_from_file)
+  (libraries torch core balltree))
