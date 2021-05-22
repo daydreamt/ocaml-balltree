@@ -1,8 +1,10 @@
 import argparse
 import resource
+import os
 import sys
 import numpy as np
 #from scipy.sparse import csr_matrix
+import psutil
 from sklearn.neighbors import BallTree
 
 parser = argparse.ArgumentParser(usage="")
@@ -15,7 +17,8 @@ with open(args.embeddings) as f:
         x = np.array(line.strip().split())
         embeddings.append(x.astype(np.float))
 
-embeddings = np.concatenate(embeddings)
+embeddings = np.stack(embeddings)
 tree = BallTree(embeddings,
-                leaf_size=embeddings.shape[0])
-print("GB used: {}".format(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024**3)))
+                leaf_size=1)
+process = psutil.Process(os.getpid())
+print("GB used: {}".format(process.memory_info().rss / (1024**3)))

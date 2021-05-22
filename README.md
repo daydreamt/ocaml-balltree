@@ -1,4 +1,4 @@
-Balltree data structure implemented in ocaml-torch. Currently only supports Euclidean distance. 
+Balltree data structure implemented in ocaml-torch. Currently only supports Euclidean distance, and takes more memory than the scikit-learn balltree. 
 
 Also has an example webserver application, built on top ("balltree as a service").
 
@@ -6,8 +6,6 @@ Also has an example webserver application, built on top ("balltree as a service"
 [] more/ arbitrary distances
 
 [] serialization to disk
-
-[] comparisons with sklearn
 
 
 
